@@ -7,7 +7,7 @@ import authRoutes from "./routes/authRoutes.js";
 import watchlistRoutes from "./routes/watchlistRoutes.js";
 
 config();
-connectDB();
+await connectDB();
 
 const app = express();
 
