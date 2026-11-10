@@ -1,9 +1,9 @@
 import z from "zod";
 
-const addToWatchlistSchema = z.object({
+export const AddToWatchlistSchema = z.object({
   movieId: z.uuid(),
   status: z
-    .enum(["PLAN", "WATCHING", "COMPLETED", "DROPPED"], {
+    .enum(["PLANNED", "WATCHING", "COMPLETED", "DROPPED"], {
       error: () => ({
         message:
           "Status must be one of: PLANNED, WATCHING, COMPLETED, or DROPPED",
@@ -19,4 +19,8 @@ const addToWatchlistSchema = z.object({
   notes: z.string().optional(),
 });
 
-export { addToWatchlistSchema };
+export const UpdateWatchlistSchema = AddToWatchlistSchema.omit({ movieId: true });
+
+export type AddToWatchlistInput = z.infer<typeof AddToWatchlistSchema>;
+
+export type UpdateWatchlistInput = z.infer<typeof UpdateWatchlistSchema>;

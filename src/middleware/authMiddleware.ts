@@ -1,38 +1,47 @@
 import jwt from "jsonwebtoken";
 import { prisma } from "../config/db.js";
+import type { RequestHandler} from "express";
+import { AppError } from "../utils/AppError.js";
+import { env } from "../config/env.js";
+
+type TokenPayload = { id: string };
+
+const getToken = (authHeader: string | undefined, cookieToken: unknown) => {
+  if (authHeader?.startsWith("Bearer ")) return authHeader.split(" ")[1];
+  if (typeof cookieToken === 'string') return cookieToken;
+  return undefined;
+}
+
+const verifyToken = (token: string): TokenPayload => {
+  const secret = env.JWT_SECRET;
+  if (!secret) throw new Error('JWT_SECRET is not set');
+
+  let decoded;
+  try {
+    decoded = jwt.verify(token, secret);
+  } catch {
+    throw new AppError("Not authorized. Invalid or expired token.", 401)
+  }
+
+  if (typeof decoded === 'string' || typeof decoded.id !== 'string') {
+    throw new AppError('Not authroized. Malformed token.', 401)
+  }
+  return { id: decoded.id }
+}
 
 // Read the token from the request
 // Check if the token is valid
-export const authMiddleware = async (req, res, next) => {
+export const authMiddleware: RequestHandler = async (req, res, next) => {
   console.log("Auth middleware reached.");
-  let token;
+  const token = getToken(req.headers.authorization, req.cookies?.jwt)
+  if (!token) throw new AppError('Not authorized. No token provided.', 401);
 
-  if (req.headers.authorization.startsWith("Bearer")) {
-    token = req.headers.authorization.split(" ")[1];
-  } else if (req.cookies?.jwt) {
-    token = req.cookies.jwt
-  }
+  const { id } = verifyToken(token);
 
-  if (!token) {
-    return res.status(401).json({ error: "Not authorized. No token provided." })
-  }
-
-  try {
-    // Verify token is valid and extract the user id
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    const user = await prisma.findUnique({
-      where: { id: decoded.id }
-    });
-
-    if (!user) {
-      return res.status(401).json({ error: "User no longer exists" });
-    }
+  const user = await prisma.user.findUnique({ where: { id} })
+  if (!user) throw new AppError('User no longer exists', 401)
 
     req.user = user;
     next();
-  } catch (err) {
-    return res.status(401).json({ error: "Not authorized. No token", err })    
-  }
 
 };
