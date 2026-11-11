@@ -21,10 +21,7 @@ type LoginInput = z.infer<typeof LoginSchema>;
 
 type LoginReturn = {
   user: Omit<UserType, 'password'>;
-  token: string;
 };
-
-type LogoutReturn = { message: string }
 
 export {
   UserSchema,
@@ -34,5 +31,4 @@ export {
   type RegistrationInput,
   type LoginReturn,
   type LoginInput,
-  type LogoutReturn
 };

@@ -24,7 +24,7 @@ const verifyToken = (token: string): TokenPayload => {
   }
 
   if (typeof decoded === 'string' || typeof decoded.id !== 'string') {
-    throw new AppError('Not authroized. Malformed token.', 401)
+    throw new AppError('Not authorized. Malformed token.', 401)
   }
   return { id: decoded.id }
 }

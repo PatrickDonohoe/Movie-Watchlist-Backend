@@ -8,7 +8,7 @@ const EnvSchema = z.object({
   JWT_SECRET: z.string().min(32, 'JWT_SECRET should be at least 32 characters.'),
 
   // Lifetime in SECONDS. .env values are always string, so coerce to a number.
-  JWT_EXPIRES_IN: z.coerce.number().int().positive().default(60 * 60 * 24 * 7)
+  JWT_EXPIRES_IN: z.coerce.number().int().positive().default(60 * 60 * 24 * 7),
 })
 
 const parsed = EnvSchema.safeParse(process.env)

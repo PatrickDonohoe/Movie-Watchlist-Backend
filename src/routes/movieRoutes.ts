@@ -1,21 +1,25 @@
 import express from 'express';
 
+import {
+  getMovie,
+  addMovie,
+  updateMovie,
+  removeMovie,
+} from '../controllers/movieController.js';
+import { MovieSchema } from '../validators/movieValidators.js';
+import { validateRequest } from '../middleware/validateRequest.js';
+import { authMiddleware } from '../middleware/authMiddleware.js';
+
 const router = express.Router();
 
-router.get('/hello', (req, res) => {
-  res.json({ httpMethod: 'get' });
-});
+router.use(authMiddleware);
 
-router.post('/hello', (req, res) => {
-  res.json({ httpMethod: 'post' });
-});
+router.get('/:id', getMovie);
 
-router.put('/hello', (req, res) => {
-  res.json({ httpMethod: 'put' });
-});
+router.post('/', validateRequest(MovieSchema), addMovie);
 
-router.delete('/hello', (req, res) => {
-  res.json({ httpMethod: 'delete' });
-});
+router.put('/:id', validateRequest(MovieSchema), updateMovie);
+
+router.delete('/:id', removeMovie);
 
 export default router;

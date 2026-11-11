@@ -12,6 +12,7 @@ import type {
 
 type ItemParams = { id: string };
 type ItemData = { watchListItem: WatchListItem };
+type WatchList = { watchlist: WatchListItem[] };
 
 // Extracted because it is shared by update and remove
 const findOwnedItem = async (itemId: string, userId: string) => {
@@ -20,6 +21,36 @@ const findOwnedItem = async (itemId: string, userId: string) => {
   if (item.userId !== userId)
     throw new AppError('Not allowed to modify this item', 403);
   return item;
+};
+
+const getWatchlist = async (
+  req: Request<{}, ApiResponse<WatchList>>,
+  res: Response<ApiResponse<WatchList>>
+) => {
+  const user = requireUser(req);
+
+  const watchlist = await prisma.watchListItem.findMany({
+    where: { userId: user.id },
+  });
+
+  if (!watchlist) throw new AppError('Watchlist not found.', 404);
+
+  sendSuccess(res, { watchlist });
+};
+
+const getWatchlistItem = async (
+  req: Request<ItemParams, ApiResponse<ItemData>>,
+  res: Response<ApiResponse<ItemData>>
+) => {
+  const user = requireUser(req);
+  await findOwnedItem(req.params.id, user.id);
+
+  const watchListItem = await prisma.watchListItem.findUnique({
+    where: { id: req.params.id },
+  });
+  if (!watchListItem) throw new AppError('Movie not found.');
+
+  sendSuccess(res, { watchListItem });
 };
 
 const addToWatchlist = async (
@@ -99,4 +130,10 @@ const removeFromWatchlist = async (
   return sendSuccess(res, { message: 'Movie removed from the watchlist' });
 };
 
-export { addToWatchlist, removeFromWatchlist, updateWatchlist };
+export {
+  getWatchlist,
+  getWatchlistItem,
+  addToWatchlist,
+  removeFromWatchlist,
+  updateWatchlist,
+};

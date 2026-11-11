@@ -1,16 +1,17 @@
 import type { Request, Response } from 'express';
 import { prisma } from '../config/db.js';
 import bcrypt from 'bcryptjs';
-import { generateToken } from '../utils/generateToken.js';
+import { setAuthCookie } from '../utils/setAuthCookie.js';
 import type {
   LoginInput,
   LoginReturn,
-  LogoutReturn,
   RegistrationInput,
 } from '../validators/authValidators.js';
 import { ApiResponse } from '../types/api.js';
 import { sendSuccess } from '../utils/respond.js';
 import { AppError } from '../utils/AppError.js';
+import { requireUser } from '../utils/requireUser.js';
+import type { MessageReturn } from '../types/messageReturn.js';
 
 const register = async (
   req: Request<{}, ApiResponse<LoginReturn>, RegistrationInput>,
@@ -24,7 +25,8 @@ const register = async (
     where: { email: email },
   });
 
-  if (userExists) throw new AppError('User already exists with this email', 400);
+  if (userExists)
+    throw new AppError('User already exists with this email', 400);
 
   // Hash Password
   const salt = await bcrypt.genSalt(10);
@@ -40,7 +42,7 @@ const register = async (
   });
 
   // Generate jwt token
-  const token = generateToken(user.id, res);
+  setAuthCookie(user.id, res);
 
   res.status(201).json({
     status: 'success',
@@ -50,7 +52,6 @@ const register = async (
         name: name, // name and email data come from body
         email: email,
       },
-      token,
     },
   });
 };
@@ -71,7 +72,7 @@ const login = async (
   }
 
   // Generate jwt token
-  const token = generateToken(user.id, res);
+  setAuthCookie(user.id, res);
 
   return sendSuccess(res, {
     user: {
@@ -79,24 +80,34 @@ const login = async (
       name: user.name,
       email: user.email,
     },
-    token,
   });
 };
 
 const logout = async (
   _req: Request,
-  res: Response<ApiResponse<LogoutReturn>>
+  res: Response<ApiResponse<MessageReturn>>
 ) => {
   res.cookie('jwt', '', {
     httpOnly: true,
     expires: new Date(0),
   });
-  res.status(200).json({
-    status: 'success',
-    data: {
-      message: 'Logged out successfully',
-    },
-  });
+  sendSuccess(res, { message: 'Logged out successfully' });
 };
 
-export { register, login, logout };
+const removeUser = async (
+  req: Request,
+  res: Response<ApiResponse<MessageReturn>>
+) => {
+  const user = requireUser(req);
+
+  await prisma.user.deleteMany({ where: { id: user.id } });
+
+  res.cookie('jwt', '', {
+    httpOnly: true,
+    expires: new Date(0),
+  });
+
+  sendSuccess(res, { message: 'User successfully removed.' });
+};
+
+export { register, login, logout, removeUser };
