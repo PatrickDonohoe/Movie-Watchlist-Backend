@@ -6,6 +6,7 @@ import authRoutes from './routes/authRoutes.js';
 import watchlistRoutes from './routes/watchlistRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import cookieParser from 'cookie-parser';
+import { env } from './config/env.js';
 
 await connectDB();
 
@@ -22,10 +23,8 @@ app.use('/auth', authRoutes);
 app.use('/watchlist', watchlistRoutes);
 app.use(errorHandler);
 
-const PORT = 5001;
-
-const server = app.listen(PORT, () => {
-  console.log(`Server running on port: ${PORT}`);
+const server = app.listen(env.PORT, () => {
+  console.log(`Server running on port: ${env.PORT}`);
 });
 
 // Handle unhandled promise rejections (e.g., database connection errors)

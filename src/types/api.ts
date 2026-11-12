@@ -7,7 +7,7 @@ export type ApiError = {
   status: 'error';
   error: {
     message: string;
-    deatils?: unknown;
+    details?: unknown;
   };
 };
 

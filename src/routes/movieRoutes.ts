@@ -2,6 +2,7 @@ import express from 'express';
 
 import {
   getMovie,
+  getMovies,
   addMovie,
   updateMovie,
   removeMovie,
@@ -9,17 +10,20 @@ import {
 import { MovieSchema } from '../validators/movieValidators.js';
 import { validateRequest } from '../middleware/validateRequest.js';
 import { authMiddleware } from '../middleware/authMiddleware.js';
+import { IdParamSchema } from '../validators/commonValidators.js';
 
 const router = express.Router();
 
 router.use(authMiddleware);
 
-router.get('/:id', getMovie);
+router.get('/:id', validateRequest({ params: IdParamSchema }), getMovie);
 
-router.post('/', validateRequest(MovieSchema), addMovie);
+router.get('/', getMovies);
 
-router.put('/:id', validateRequest(MovieSchema), updateMovie);
+router.post('/', validateRequest({ body: MovieSchema }), addMovie);
 
-router.delete('/:id', removeMovie);
+router.put('/:id', validateRequest({ params: IdParamSchema, body: MovieSchema }), updateMovie);
+
+router.delete('/:id', validateRequest({ params: IdParamSchema }), removeMovie);
 
 export default router;

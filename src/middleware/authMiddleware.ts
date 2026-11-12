@@ -31,8 +31,7 @@ const verifyToken = (token: string): TokenPayload => {
 
 // Read the token from the request
 // Check if the token is valid
-export const authMiddleware: RequestHandler = async (req, res, next) => {
-  console.log("Auth middleware reached.");
+export const authMiddleware: RequestHandler = async (req, _res, next) => {
   const token = getToken(req.headers.authorization, req.cookies?.jwt)
   if (!token) throw new AppError('Not authorized. No token provided.', 401);
 

@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import type { WatchListItem } from '@prisma/client';
+import { type WatchListItem, Prisma } from '@prisma/client';
 import { prisma } from '../config/db.js';
 import { requireUser } from '../utils/requireUser.js';
 import { AppError } from '../utils/AppError.js';
@@ -33,8 +33,6 @@ const getWatchlist = async (
     where: { userId: user.id },
   });
 
-  if (!watchlist) throw new AppError('Watchlist not found.', 404);
-
   sendSuccess(res, { watchlist });
 };
 
@@ -43,12 +41,7 @@ const getWatchlistItem = async (
   res: Response<ApiResponse<ItemData>>
 ) => {
   const user = requireUser(req);
-  await findOwnedItem(req.params.id, user.id);
-
-  const watchListItem = await prisma.watchListItem.findUnique({
-    where: { id: req.params.id },
-  });
-  if (!watchListItem) throw new AppError('Movie not found.');
+  const watchListItem = await findOwnedItem(req.params.id, user.id);
 
   sendSuccess(res, { watchListItem });
 };
@@ -60,42 +53,23 @@ const addToWatchlist = async (
   const user = requireUser(req);
   const { movieId, status, rating, notes } = req.body;
 
-  // Verify movie exists
-  const movie = await prisma.movie.findUnique({
-    where: { id: movieId },
-  });
-
-  if (!movie) throw new AppError('Movie not found', 404);
-
-  // Check if already added
-  const existingInWatchlist = await prisma.watchListItem.findUnique({
-    where: {
-      userId_movieId: {
+  try {
+    const watchListItem = await prisma.watchListItem.create({
+      data: {
         userId: user.id,
         movieId,
+        status,
+        rating,
+        notes,
       },
-    },
-  });
-
-  if (existingInWatchlist)
-    throw new AppError('Movie already in the watchlist', 409);
-
-  const watchListItem = await prisma.watchListItem.create({
-    data: {
-      userId: user.id,
-      movieId,
-      status,
-      rating,
-      notes,
-    },
-  });
-
-  res.status(201).json({
-    status: 'success',
-    data: {
-      watchListItem,
-    },
-  });
+    });
+    return sendSuccess(res, { watchListItem }, 201)
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      throw new AppError('Movie already in the watchlist', 409);
+    }
+    throw err;
+  }
 };
 
 const updateWatchlist = async (

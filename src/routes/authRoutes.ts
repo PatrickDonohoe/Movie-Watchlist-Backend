@@ -6,8 +6,8 @@ import { validateRequest } from "../middleware/validateRequest.js";
 
 const router = express.Router();
 
-router.post("/register", validateRequest(RegistrationSchema), register);
-router.post("/login", validateRequest(LoginSchema), login);
+router.post("/register", validateRequest({ body: RegistrationSchema }), register);
+router.post("/login", validateRequest({ body: LoginSchema }), login);
 router.post("/logout", logout);
 router.delete('/remove', removeUser);
 

@@ -12,6 +12,7 @@ import {
   AddToWatchlistSchema,
   UpdateWatchlistSchema,
 } from '../validators/watchlistValidators.js';
+import { IdParamSchema } from '../validators/commonValidators.js';
 
 const router = express.Router();
 
@@ -19,12 +20,28 @@ router.use(authMiddleware);
 
 router.get('/', getWatchlist);
 
-router.get('/:id', getWatchlistItem);
+router.get(
+  '/:id',
+  validateRequest({ params: IdParamSchema }),
+  getWatchlistItem
+);
 
-router.post('/', validateRequest(AddToWatchlistSchema), addToWatchlist);
+router.post(
+  '/',
+  validateRequest({ body: AddToWatchlistSchema }),
+  addToWatchlist
+);
 
-router.put('/:id', validateRequest(UpdateWatchlistSchema), updateWatchlist);
+router.put(
+  '/:id',
+  validateRequest({ params: IdParamSchema, body: UpdateWatchlistSchema }),
+  updateWatchlist
+);
 
-router.delete('/:id', removeFromWatchlist);
+router.delete(
+  '/:id',
+  validateRequest({ params: IdParamSchema }),
+  removeFromWatchlist
+);
 
 export default router;

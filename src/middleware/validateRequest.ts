@@ -1,14 +1,24 @@
 import type { Request, Response, NextFunction } from 'express';
 import type { ZodType } from 'zod';
+import { AppError } from '../utils/AppError.js';
 
-export const validateRequest = (schema: ZodType) => {
-  return (req: Request, res: Response, next: NextFunction) => {
-    const result = schema.safeParse(req.body);
+type Schemas = { body?: ZodType; params?: ZodType; query?: ZodType }
 
-    if (!result.success) {
-      return res.status(400).json({ error: result.error.issues });
+export const validateRequest = (schemas: Schemas) => {
+  return (req: Request, _res: Response, next: NextFunction) => {
+    for (const key of ['body', 'params', 'query'] as const) {
+      const schema = schemas[key];
+      if (!schema) continue;
+
+      const result = schema.safeParse(req[key]);
+      if (!result.success) throw new AppError(result.error.message, 400);
+
+      if (key === 'query') {
+        Object.defineProperty(req, 'query', { value: result.data })
+      } else {
+        req[key] = result.data;
+      }
     }
-    req.body = result.data; // replacing with the parsed/stripped version
     next();
   };
 };

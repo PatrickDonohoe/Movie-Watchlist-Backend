@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
 import { prisma } from '../config/db.js';
 import bcrypt from 'bcryptjs';
-import { setAuthCookie } from '../utils/setAuthCookie.js';
+import { clearAuthCookie, setAuthCookie } from '../utils/setAuthCookie.js';
 import type {
   LoginInput,
   LoginReturn,
@@ -15,7 +15,7 @@ import type { MessageReturn } from '../types/messageReturn.js';
 
 const register = async (
   req: Request<{}, ApiResponse<LoginReturn>, RegistrationInput>,
-  res: Response
+  res: Response<ApiResponse<LoginReturn>>
 ) => {
   // Destructuring the body to access the data sent in the request.
   const { name, email, password } = req.body;
@@ -39,21 +39,13 @@ const register = async (
       email,
       password: hashedPassword,
     },
+    omit: { password: true },
   });
 
   // Generate jwt token
   setAuthCookie(user.id, res);
 
-  res.status(201).json({
-    status: 'success',
-    data: {
-      user: {
-        id: user.id,
-        name: name, // name and email data come from body
-        email: email,
-      },
-    },
-  });
+  sendSuccess(res, { user }, 201);
 };
 
 const login = async (
@@ -87,10 +79,7 @@ const logout = async (
   _req: Request,
   res: Response<ApiResponse<MessageReturn>>
 ) => {
-  res.cookie('jwt', '', {
-    httpOnly: true,
-    expires: new Date(0),
-  });
+  clearAuthCookie(res);
   sendSuccess(res, { message: 'Logged out successfully' });
 };
 
@@ -102,10 +91,7 @@ const removeUser = async (
 
   await prisma.user.deleteMany({ where: { id: user.id } });
 
-  res.cookie('jwt', '', {
-    httpOnly: true,
-    expires: new Date(0),
-  });
+  clearAuthCookie(res);
 
   sendSuccess(res, { message: 'User successfully removed.' });
 };
