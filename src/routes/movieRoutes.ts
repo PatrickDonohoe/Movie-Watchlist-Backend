@@ -1,29 +1,34 @@
 import express from 'express';
 
-import {
-  getMovie,
-  getMovies,
-  addMovie,
-  updateMovie,
-  removeMovie,
-} from '../controllers/movieController.js';
+import { createMovieController } from '../controllers/movieController.js';
 import { MovieSchema } from '../validators/movieValidators.js';
 import { validateRequest } from '../middleware/validateRequest.js';
-import { authMiddleware } from '../middleware/authMiddleware.js';
+import { createAuthMiddleware} from '../middleware/authMiddleware.js';
 import { IdParamSchema } from '../validators/commonValidators.js';
+import type { AppDeps } from '../app.js';
 
-const router = express.Router();
+export const createMovieRouter = (deps: AppDeps) => {
+  const c = createMovieController(deps);
+  const router = express.Router();
 
-router.use(authMiddleware);
+  router.use(createAuthMiddleware(deps));
 
-router.get('/:id', validateRequest({ params: IdParamSchema }), getMovie);
+  router.get('/:id', validateRequest({ params: IdParamSchema }), c.getMovie);
 
-router.get('/', getMovies);
+  router.get('/', c.getMovies);
 
-router.post('/', validateRequest({ body: MovieSchema }), addMovie);
+  router.post('/', validateRequest({ body: MovieSchema }), c.addMovie);
 
-router.put('/:id', validateRequest({ params: IdParamSchema, body: MovieSchema }), updateMovie);
+  router.put(
+    '/:id',
+    validateRequest({ params: IdParamSchema, body: MovieSchema }),
+    c.updateMovie
+  );
 
-router.delete('/:id', validateRequest({ params: IdParamSchema }), removeMovie);
-
-export default router;
+  router.delete(
+    '/:id',
+    validateRequest({ params: IdParamSchema }),
+    c.removeMovie
+  );
+  return router;
+};

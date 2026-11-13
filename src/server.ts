@@ -1,27 +1,10 @@
-import express from 'express';
+import { createApp } from './app.js';
+import { connectDB, disconnectDB, prisma } from './config/db.js';
 
-import { connectDB, disconnectDB } from './config/db.js';
-import movieRouter from './routes/movieRoutes.js';
-import authRoutes from './routes/authRoutes.js';
-import watchlistRoutes from './routes/watchlistRoutes.js';
-import { errorHandler } from './middleware/errorHandler.js';
-import cookieParser from 'cookie-parser';
 import { env } from './config/env.js';
 
 await connectDB();
-
-const app = express();
-
-// Body parsing middlewares - app.use indicates use of middlewares
-app.use(express.json());
-app.use(express.urlencoded({ extended: true })); // for use of html forms, if used.
-app.use(cookieParser());
-
-// API Routes
-app.use('/movies', movieRouter);
-app.use('/auth', authRoutes);
-app.use('/watchlist', watchlistRoutes);
-app.use(errorHandler);
+const app = createApp({ prisma });
 
 const server = app.listen(env.PORT, () => {
   console.log(`Server running on port: ${env.PORT}`);

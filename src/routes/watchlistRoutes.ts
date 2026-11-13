@@ -1,47 +1,45 @@
 import express from 'express';
-import {
-  addToWatchlist,
-  removeFromWatchlist,
-  updateWatchlist,
-  getWatchlist,
-  getWatchlistItem,
-} from '../controllers/watchlistController.js';
-import { authMiddleware } from '../middleware/authMiddleware.js';
+import { createWatchlistController } from '../controllers/watchlistController.js';
+import { createAuthMiddleware } from '../middleware/authMiddleware.js';
 import { validateRequest } from '../middleware/validateRequest.js';
 import {
   AddToWatchlistSchema,
   UpdateWatchlistSchema,
 } from '../validators/watchlistValidators.js';
 import { IdParamSchema } from '../validators/commonValidators.js';
+import { AppDeps } from '../app.js';
 
-const router = express.Router();
+export const createWatchlistRouter = (deps: AppDeps) => {
+  const c = createWatchlistController(deps);
+  const router = express.Router();
 
-router.use(authMiddleware);
+  router.use(createAuthMiddleware(deps));
 
-router.get('/', getWatchlist);
+  router.get('/', c.getWatchlist);
 
-router.get(
-  '/:id',
-  validateRequest({ params: IdParamSchema }),
-  getWatchlistItem
-);
+  router.get(
+    '/:id',
+    validateRequest({ params: IdParamSchema }),
+    c.getWatchlistItem
+  );
 
-router.post(
-  '/',
-  validateRequest({ body: AddToWatchlistSchema }),
-  addToWatchlist
-);
+  router.post(
+    '/',
+    validateRequest({ body: AddToWatchlistSchema }),
+    c.addToWatchlist
+  );
 
-router.put(
-  '/:id',
-  validateRequest({ params: IdParamSchema, body: UpdateWatchlistSchema }),
-  updateWatchlist
-);
+  router.put(
+    '/:id',
+    validateRequest({ params: IdParamSchema, body: UpdateWatchlistSchema }),
+    c.updateWatchlist
+  );
 
-router.delete(
-  '/:id',
-  validateRequest({ params: IdParamSchema }),
-  removeFromWatchlist
-);
+  router.delete(
+    '/:id',
+    validateRequest({ params: IdParamSchema }),
+    c.removeFromWatchlist
+  );
 
-export default router;
+  return router;
+};

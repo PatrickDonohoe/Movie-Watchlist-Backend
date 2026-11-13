@@ -1,16 +1,27 @@
-import express from "express";
+import express from 'express';
 
-import { register, login, logout, removeUser } from "../controllers/authController.js";
-import { LoginSchema, RegistrationSchema } from "../validators/authValidators.js";
-import { validateRequest } from "../middleware/validateRequest.js";
+import { createAuthController } from '../controllers/authController.js';
+import {
+  LoginSchema,
+  RegistrationSchema,
+} from '../validators/authValidators.js';
+import { validateRequest } from '../middleware/validateRequest.js';
+import { AppDeps } from '../app.js';
 
-const router = express.Router();
+export const createAuthRouter = (deps: AppDeps) => {
+  const c = createAuthController(deps);
+  const router = express.Router();
 
-router.post("/register", validateRequest({ body: RegistrationSchema }), register);
-router.post("/login", validateRequest({ body: LoginSchema }), login);
-router.post("/logout", logout);
-router.delete('/remove', removeUser);
+  router.post(
+    '/register',
+    validateRequest({ body: RegistrationSchema }),
+    c.register
+  );
+  router.post('/login', validateRequest({ body: LoginSchema }), c.login);
+  router.post('/logout', c.logout);
+  router.delete('/remove', c.removeUser);
 
-export default router;
+  return router;
+};
 
 // Use openssl rand -base64 32 to generate random secret keys

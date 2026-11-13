@@ -7,8 +7,7 @@
     "strict": true,
     "skipLibCheck": true,
     "isolatedModules": true,
-    "rootDir": "src",
-    "outDir": "dist"
+    "noEmit": true
   },
-  "include": ["src"]
+  "include": ["src", "tests", "vitest.config.ts"]
 }
