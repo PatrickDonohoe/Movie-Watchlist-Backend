@@ -1,6 +1,5 @@
 import type { Request, Response } from 'express';
 import type { Movie } from '@prisma/client';
-import { prisma } from '../config/db.js';
 import { requireUser } from '../utils/requireUser.js';
 import { AppError } from '../utils/AppError.js';
 import { sendSuccess } from '../utils/respond.js';
@@ -12,15 +11,15 @@ type MovieParams = { id: string };
 type MovieData = { movie: Movie };
 type MultMovieData = { movies: Movie[] };
 
-const findMovie = async (movieId: string, userId: string) => {
-  const movie = await prisma.movie.findUnique({ where: { id: movieId } });
-  if (!movie) throw new AppError('Movie not found.', 404);
-  if (movie.createdBy !== userId)
-    throw new AppError('Not allowed to modify this movie', 403);
-  return movie;
-};
-
 export const createMovieController = ({ prisma }: AppDeps) => {
+  const findMovie = async (movieId: string, userId: string) => {
+    const movie = await prisma.movie.findUnique({ where: { id: movieId } });
+    if (!movie) throw new AppError('Movie not found.', 404);
+    if (movie.createdBy !== userId)
+      throw new AppError('Not allowed to modify this movie', 403);
+    return movie;
+  };
+
   const getMovies = async (
     req: Request<{}, ApiResponse<MultMovieData>>,
     res: Response<ApiResponse<MultMovieData>>

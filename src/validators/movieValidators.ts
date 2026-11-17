@@ -8,6 +8,7 @@ export const MovieSchema = z.object({
   overview: z
     .string()
     .max(500, 'Overview must be less than 500 characters.')
+    .nullable()
     .optional(),
   releaseYear: z.int(),
   genres: z.array(z.string()),

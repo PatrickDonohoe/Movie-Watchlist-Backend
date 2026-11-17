@@ -7,7 +7,7 @@ import {
   authCookie,
   prismaError,
   expectError,
-} from '../helpers.js';
+} from './helpers.js';
 
 const USER_ID = randomUUID();
 const ITEM_ID = randomUUID();
@@ -94,7 +94,7 @@ describe('GET /watchlist/:id', () => {
 });
 
 describe('GET /watchlist', () => {
-  it('200s when the user in the token is found in the db', async () => {
+  it('200s when the user exists', async () => {
     ctx.prisma.watchListItem.findMany.mockResolvedValue([]);
     const res = await api.get('/watchlist');
     expect(ctx.prisma.user.findUnique).toHaveBeenCalledWith({
