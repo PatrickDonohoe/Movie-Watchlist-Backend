@@ -7,6 +7,7 @@ import {
 } from '../validators/authValidators.js';
 import { validateRequest } from '../middleware/validateRequest.js';
 import { AppDeps } from '../app.js';
+import { createAuthMiddleware } from '../middleware/authMiddleware.js';
 
 export const createAuthRouter = (deps: AppDeps) => {
   const c = createAuthController(deps);
@@ -19,7 +20,7 @@ export const createAuthRouter = (deps: AppDeps) => {
   );
   router.post('/login', validateRequest({ body: LoginSchema }), c.login);
   router.post('/logout', c.logout);
-  router.delete('/remove', c.removeUser);
+  router.delete('/remove', createAuthMiddleware(deps), c.removeUser);
 
   return router;
 };

@@ -20,7 +20,7 @@ type RegistrationInput = z.infer<typeof RegistrationSchema>;
 type LoginInput = z.infer<typeof LoginSchema>;
 
 type LoginReturn = {
-  user: Omit<UserType, 'password'>;
+  user: Omit<UserType, 'password' | 'createdAt'>;
 };
 
 export {

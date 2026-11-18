@@ -12,41 +12,35 @@ import { AppError } from '../utils/AppError.js';
 import { requireUser } from '../utils/requireUser.js';
 import type { MessageReturn } from '../types/messageReturn.js';
 import type { AppDeps } from '../app.js';
+import { Prisma } from '@prisma/client';
 
 export const createAuthController = ({ prisma }: AppDeps) => {
   const register = async (
     req: Request<{}, ApiResponse<LoginReturn>, RegistrationInput>,
     res: Response<ApiResponse<LoginReturn>>
   ) => {
-    // Destructuring the body to access the data sent in the request.
     const { name, email, password } = req.body;
 
-    // Check if user already exists - many methods available through prisma
-    const userExists = await prisma.user.findUnique({
-      where: { email: email },
-    });
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    if (userExists)
-      throw new AppError('User already exists with this email', 400);
-
-    // Hash Password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    // Create User
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-      },
-      omit: { password: true },
-    });
-
-    // Generate jwt token
-    setAuthCookie(user.id, res);
-
-    sendSuccess(res, { user }, 201);
+    try {
+      const user = await prisma.user.create({
+        data: {
+          name,
+          email,
+          password: hashedPassword,
+        },
+        omit: { password: true },
+      });
+      setAuthCookie(user.id, res);
+      return sendSuccess(res, { user }, 201);
+    } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError) {
+        if (err.code === 'P2002')
+          throw new AppError('User already exists with that email', 409);
+      }
+      throw err;
+    }
   };
 
   const login = async (
