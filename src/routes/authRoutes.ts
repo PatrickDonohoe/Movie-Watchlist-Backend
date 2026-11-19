@@ -8,9 +8,11 @@ import {
 import { validateRequest } from '../middleware/validateRequest.js';
 import { AppDeps } from '../app.js';
 import { createAuthMiddleware } from '../middleware/authMiddleware.js';
+import { createAuthService } from '../services/authService.js';
 
 export const createAuthRouter = (deps: AppDeps) => {
-  const c = createAuthController(deps);
+  const service = createAuthService(deps);
+  const c = createAuthController(service);
   const router = express.Router();
 
   router.post(

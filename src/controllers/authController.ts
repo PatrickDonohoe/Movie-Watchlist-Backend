@@ -1,5 +1,4 @@
 import type { Request, Response } from 'express';
-import bcrypt from 'bcryptjs';
 import { clearAuthCookie, setAuthCookie } from '../utils/setAuthCookie.js';
 import type {
   LoginInput,
@@ -8,66 +7,29 @@ import type {
 } from '../validators/authValidators.js';
 import { ApiResponse } from '../types/api.js';
 import { sendSuccess } from '../utils/respond.js';
-import { AppError } from '../utils/AppError.js';
 import { requireUser } from '../utils/requireUser.js';
 import type { MessageReturn } from '../types/messageReturn.js';
-import type { AppDeps } from '../app.js';
-import { Prisma } from '@prisma/client';
+import type { AuthService } from '../services/authService.js';
 
-export const createAuthController = ({ prisma }: AppDeps) => {
+export const createAuthController = (authService: AuthService) => {
   const register = async (
     req: Request<{}, ApiResponse<LoginReturn>, RegistrationInput>,
     res: Response<ApiResponse<LoginReturn>>
   ) => {
-    const { name, email, password } = req.body;
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    try {
-      const user = await prisma.user.create({
-        data: {
-          name,
-          email,
-          password: hashedPassword,
-        },
-        omit: { password: true },
-      });
-      setAuthCookie(user.id, res);
-      return sendSuccess(res, { user }, 201);
-    } catch (err) {
-      if (err instanceof Prisma.PrismaClientKnownRequestError) {
-        if (err.code === 'P2002')
-          throw new AppError('User already exists with that email', 'CONFLICT');
-      }
-      throw err;
-    }
+    const user = await authService.addUser(req.body);
+    setAuthCookie(user.id, res);
+    return sendSuccess(res, { user }, 201);
   };
 
   const login = async (
     req: Request<{}, ApiResponse<LoginReturn>, LoginInput>,
     res: Response<ApiResponse<LoginReturn>>
   ) => {
-    const { email, password } = req.body;
+    const user = await authService.loginUser(req.body);
 
-    // Check if user email exists
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
-
-    if (!user || !(await bcrypt.compare(password, user.password))) {
-      throw new AppError('Invalid email or password', 'UNAUTHORIZED');
-    }
-
-    // Generate jwt token
     setAuthCookie(user.id, res);
 
-    return sendSuccess(res, {
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-      },
-    });
+    return sendSuccess(res, { user });
   };
 
   const logout = async (
@@ -84,7 +46,7 @@ export const createAuthController = ({ prisma }: AppDeps) => {
   ) => {
     const user = requireUser(req);
 
-    await prisma.user.deleteMany({ where: { id: user.id } });
+    await authService.deleteUser(user.id);
 
     clearAuthCookie(res);
 
