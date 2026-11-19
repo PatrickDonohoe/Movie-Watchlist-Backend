@@ -7,9 +7,9 @@ export const sendSuccess = <T>(
   statusCode = 200
 ) => res.status(statusCode).json({ status: 'success', data });
 
-export const sendError = <T>(
-  res: Response<ApiResponse<T>>,
-  message: string,
-  statusCode = 400,
-  details?: unknown
-) => res.status(statusCode).json({ status: 'error', error: { message, details } });
+// export const sendError = <T>(
+//   res: Response<ApiResponse<T>>,
+//   message: string,
+//   statusCode = 400,
+//   details?: unknown
+// ) => res.status(statusCode).json({ status: 'error', error: { message, details } });

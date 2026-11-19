@@ -3,12 +3,14 @@ import express from 'express';
 import { createMovieController } from '../controllers/movieController.js';
 import { MovieSchema } from '../validators/movieValidators.js';
 import { validateRequest } from '../middleware/validateRequest.js';
-import { createAuthMiddleware} from '../middleware/authMiddleware.js';
+import { createAuthMiddleware } from '../middleware/authMiddleware.js';
 import { IdParamSchema } from '../validators/commonValidators.js';
 import type { AppDeps } from '../app.js';
+import { createMovieService } from '../services/movieService.js';
 
 export const createMovieRouter = (deps: AppDeps) => {
-  const c = createMovieController(deps);
+  const service = createMovieService(deps);
+  const c = createMovieController(service);
   const router = express.Router();
 
   router.use(createAuthMiddleware(deps));

@@ -1,36 +1,24 @@
 import type { Request, Response } from 'express';
 import type { Movie } from '@prisma/client';
 import { requireUser } from '../utils/requireUser.js';
-import { AppError } from '../utils/AppError.js';
 import { sendSuccess } from '../utils/respond.js';
 import type { ApiResponse } from '../types/api.js';
 import type { MovieSubmit } from '../validators/movieValidators.js';
-import type { AppDeps } from '../app.js';
+import type { MovieService } from '../services/movieService.js';
 
 type MovieParams = { id: string };
 type MovieData = { movie: Movie };
 type MultMovieData = { movies: Movie[] };
 
-export const createMovieController = ({ prisma }: AppDeps) => {
-  const findMovie = async (movieId: string, userId: string) => {
-    const movie = await prisma.movie.findUnique({ where: { id: movieId } });
-    if (!movie) throw new AppError('Movie not found.', 404);
-    if (movie.createdBy !== userId)
-      throw new AppError('Not allowed to modify this movie', 403);
-    return movie;
-  };
-
+export const createMovieController = (movieService: MovieService) => {
   const getMovies = async (
     req: Request<{}, ApiResponse<MultMovieData>>,
     res: Response<ApiResponse<MultMovieData>>
   ) => {
     const user = requireUser(req);
 
-    const movies = await prisma.movie.findMany({
-      where: { createdBy: user.id },
-    });
-
-    return sendSuccess(res, { movies });
+    const movies = await movieService.findMovieList(user.id);
+    sendSuccess(res, { movies });
   };
 
   const getMovie = async (
@@ -38,7 +26,7 @@ export const createMovieController = ({ prisma }: AppDeps) => {
     res: Response<ApiResponse<MovieData>>
   ) => {
     const user = requireUser(req);
-    const movie = await findMovie(req.params.id, user.id);
+    const movie = await movieService.findMovie(req.params.id, user.id);
 
     return sendSuccess(res, { movie });
   };
@@ -49,12 +37,7 @@ export const createMovieController = ({ prisma }: AppDeps) => {
   ) => {
     const user = requireUser(req);
 
-    const movie = await prisma.movie.create({
-      data: {
-        ...req.body,
-        createdBy: user.id,
-      },
-    });
+    const movie = await movieService.createMovie(user.id, req.body);
 
     sendSuccess(res, { movie }, 201);
   };
@@ -64,14 +47,13 @@ export const createMovieController = ({ prisma }: AppDeps) => {
     res: Response<ApiResponse<MovieData>>
   ) => {
     const user = requireUser(req);
-    await findMovie(req.params.id, user.id);
+    await movieService.findMovie(req.params.id, user.id);
 
-    // const { title, overview, releaseYear, genres, runtime, posterUrl } = req.body;
-
-    const movieItem = await prisma.movie.update({
-      where: { id: req.params.id },
-      data: req.body,
-    });
+    const movieItem = await movieService.modifyMovie(
+      user.id,
+      req.params.id,
+      req.body
+    );
 
     return sendSuccess(res, { movie: movieItem });
   };
@@ -81,9 +63,7 @@ export const createMovieController = ({ prisma }: AppDeps) => {
     res: Response<ApiResponse<{ message: string }>>
   ) => {
     const user = requireUser(req);
-    await findMovie(req.params.id, user.id);
-
-    await prisma.movie.delete({ where: { id: req.params.id } });
+    await movieService.deleteMovie(user.id, req.params.id);
 
     return sendSuccess(res, { message: 'Movie successfully deleted.' });
   };

@@ -37,7 +37,7 @@ export const createAuthController = ({ prisma }: AppDeps) => {
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError) {
         if (err.code === 'P2002')
-          throw new AppError('User already exists with that email', 409);
+          throw new AppError('User already exists with that email', 'CONFLICT');
       }
       throw err;
     }
@@ -55,7 +55,7 @@ export const createAuthController = ({ prisma }: AppDeps) => {
     });
 
     if (!user || !(await bcrypt.compare(password, user.password))) {
-      throw new AppError('Invalid email or password', 401);
+      throw new AppError('Invalid email or password', 'UNAUTHORIZED');
     }
 
     // Generate jwt token

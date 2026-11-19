@@ -2,7 +2,7 @@ import type { Request, Response, NextFunction } from 'express';
 import type { ZodType } from 'zod';
 import { AppError } from '../utils/AppError.js';
 
-type Schemas = { body?: ZodType; params?: ZodType; query?: ZodType }
+type Schemas = { body?: ZodType; params?: ZodType; query?: ZodType };
 
 export const validateRequest = (schemas: Schemas) => {
   return (req: Request, _res: Response, next: NextFunction) => {
@@ -11,10 +11,15 @@ export const validateRequest = (schemas: Schemas) => {
       if (!schema) continue;
 
       const result = schema.safeParse(req[key]);
-      if (!result.success) throw new AppError(result.error.message, 400);
+      if (!result.success)
+        throw new AppError(
+          'Invalid request',
+          'VALIDATION',
+          result.error.issues
+        );
 
       if (key === 'query') {
-        Object.defineProperty(req, 'query', { value: result.data })
+        Object.defineProperty(req, 'query', { value: result.data });
       } else {
         req[key] = result.data;
       }

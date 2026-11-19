@@ -20,11 +20,11 @@ const verifyToken = (token: string): TokenPayload => {
   try {
     decoded = jwt.verify(token, secret);
   } catch {
-    throw new AppError('Not authorized. Invalid or expired token.', 401);
+    throw new AppError('Not authorized. Invalid or expired token.', 'UNAUTHORIZED');
   }
 
   if (typeof decoded === 'string' || typeof decoded.id !== 'string') {
-    throw new AppError('Not authorized. Malformed token.', 401);
+    throw new AppError('Not authorized. Malformed token.', 'UNAUTHORIZED');
   }
   return { id: decoded.id };
 };
@@ -35,12 +35,12 @@ export const createAuthMiddleware =
   ({ prisma }: AppDeps): RequestHandler =>
   async (req, _res, next) => {
     const token = getToken(req.headers.authorization, req.cookies?.jwt);
-    if (!token) throw new AppError('Not authorized. No token provided.', 401);
+    if (!token) throw new AppError('Not authorized. No token provided.', 'UNAUTHORIZED');
 
     const { id } = verifyToken(token);
 
     const user = await prisma.user.findUnique({ where: { id } });
-    if (!user) throw new AppError('User no longer exists', 401);
+    if (!user) throw new AppError('User no longer exists', 'UNAUTHORIZED');
 
     req.user = user;
     next();

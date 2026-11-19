@@ -8,9 +8,11 @@ import {
 } from '../validators/watchlistValidators.js';
 import { IdParamSchema } from '../validators/commonValidators.js';
 import { AppDeps } from '../app.js';
+import { createWatchlistService } from '../services/watchlistService.js';
 
 export const createWatchlistRouter = (deps: AppDeps) => {
-  const c = createWatchlistController(deps);
+  const service = createWatchlistService(deps)
+  const c = createWatchlistController(service);
   const router = express.Router();
 
   router.use(createAuthMiddleware(deps));
